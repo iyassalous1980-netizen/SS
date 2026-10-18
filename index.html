@@ -165,28 +165,61 @@
             font-size: 12px;
         }
 
-        /* تنسيق ممتاز ومخصص للطابعة الحرارية قص وتنسيق */
+        .task-display-box {
+            text-align: right;
+            background: #f8fafc;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 12px;
+            max-height: 140px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+
+        /* تنسيق طباعة حرارية مسطر ومغلق بالكامل بدون ضياع ورق أو انحراف للهاوي */
         #printable-receipt { display: none; }
         @media print {
+            @page {
+                size: 78mm auto;
+                margin: 0mm;
+            }
+            html, body {
+                width: 78mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #fff !important;
+            }
             body * { visibility: hidden; }
             #printable-receipt, #printable-receipt * { visibility: visible; }
             #printable-receipt {
                 display: block !important;
                 position: absolute;
-                left: 0; right: 0; top: 0;
-                margin: 0 auto;
-                width: 78mm;
+                left: 0; top: 0;
+                width: 76mm;
+                padding: 3mm 1mm;
                 color: #000 !important;
                 background: #fff !important;
-                font-size: 12px;
+                font-size: 11px;
                 font-weight: bold;
                 direction: rtl;
                 text-align: center !important;
-                padding: 5px;
+                page-break-after: avoid;
+                page-break-inside: avoid;
             }
-            #printable-receipt table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-            #printable-receipt th, #printable-receipt td { border: 1px solid #000; padding: 4px; text-align: right; font-size: 11px; }
-            #printable-receipt hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+            #printable-receipt table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 4px;
+                border: 1.5px solid #000 !important;
+            }
+            #printable-receipt th, #printable-receipt td { 
+                border: 1px solid #000 !important; 
+                padding: 4px; 
+                text-align: right; 
+                font-size: 11px; 
+            }
+            #printable-receipt hr { border: none; border-top: 1px dashed #000; margin: 4px 0; }
         }
     </style>
 </head>
@@ -354,7 +387,7 @@
                 </div>
 
                 <div class="card">
-                    <h4>📝 سجل الدوام والكاش والمهام المنجزة:</h4>
+                    <h4>📝 سجل الدوام والكاش والمهام المنجزة بالتفصيل:</h4>
                     <div style="overflow-x:auto;">
                         <table id="logsTable">
                             <thead>
@@ -367,7 +400,7 @@
                                     <th>مبيعات الشفت</th>
                                     <th>المستحق</th>
                                     <th>النقاط</th>
-                                    <th>تفاصيل المهام المنجزة</th>
+                                    <th style="min-width:230px;">تفاصيل المهام المنجزة</th>
                                     <th>الإجراءات</th>
                                 </tr>
                             </thead>
@@ -767,15 +800,6 @@
         });
     }
 
-    function showTaskDetailsAlert(details) {
-        if (!details || details.trim() === "") {
-            alert("📋 لا توجد تفاصيل مهام مسجلة لهذه الوردية.");
-        } else {
-            const formatted = details.split(' | ').join('\n• ');
-            alert("📋 المهام التفصيلية المنجزة في هذه الوردية:\n\n• " + formatted);
-        }
-    }
-
     function renderDashboard() {
         const emp = document.getElementById('filterEmp').value;
         const sDate = document.getElementById('startDate').value;
@@ -808,6 +832,8 @@
                 const lBody = document.querySelector('#logsTable tbody'); lBody.innerHTML = '';
                 filteredLogs.forEach(l => {
                     const pts = l.points || l.tasksCount || 0;
+                    const tasksFormatted = l.details ? l.details.split(' | ').map(t => `• ${t}`).join('<br>') : '<i>لا توجد تفاصيل مهام</i>';
+
                     lBody.innerHTML += `<tr>
                         <td>${l.date}</td>
                         <td>${l.emp}</td>
@@ -817,12 +843,12 @@
                         <td style="font-weight:bold; color:purple;">${l.netSales || 0} ₪</td>
                         <td><b>${l.amount} ₪</b></td>
                         <td><span class="points-badge">⭐ ${pts} نقطة</span></td>
-                        <td style="text-align:right; font-size:11px; max-width:200px;">
-                            <button class="btn btn-primary" style="padding:2px 6px; font-size:11px;" onclick="showTaskDetailsAlert('${(l.details || '').replace(/'/g, "\\'")}')">👁 عرض المهام (${pts})</button>
+                        <td>
+                            <div class="task-display-box">${tasksFormatted}</div>
                         </td>
                         <td>
-                            <button class="btn btn-warning" style="padding:3px 6px; font-size:11px;" onclick="editLog(${l.id}, '${emp}')">✏ تعديل</button>
-                            <button class="btn btn-primary" style="padding:3px 6px; font-size:11px;" onclick="printLogRecord(${l.id}, '${emp}')">🖨 طباعة</button>
+                            <button class="btn btn-warning" style="padding:3px 6px; font-size:11px; margin-bottom:2px;" onclick="editLog(${l.id}, '${emp}')">✏ تعديل</button><br>
+                            <button class="btn btn-primary" style="padding:3px 6px; font-size:11px; margin-bottom:2px;" onclick="printLogRecord(${l.id}, '${emp}')">🖨 طباعة</button><br>
                             <button class="btn btn-danger" style="padding:3px 6px; font-size:11px;" onclick="deleteLog(${l.id}, '${emp}')">❌ حذف</button>
                         </td>
                     </tr>`;
@@ -878,6 +904,8 @@
                 const lBody = document.querySelector('#stmtLogsTable tbody'); lBody.innerHTML = '';
                 filteredLogs.forEach(l => {
                     const pts = l.points || l.tasksCount || 0;
+                    const tasksFormatted = l.details ? l.details.split(' | ').map(t => `• ${t}`).join('<br>') : 'لا تفاصيل';
+
                     lBody.innerHTML += `<tr>
                         <td>${l.date}</td>
                         <td>${l.inTime}<br>${l.outTime}</td>
@@ -887,7 +915,7 @@
                         <td><b>${l.amount} ₪</b></td>
                         <td>
                             <span class="points-badge">⭐ ${pts} نقطة</span>
-                            <button class="btn btn-primary" style="padding:2px 5px; font-size:10px; margin-top:3px;" onclick="showTaskDetailsAlert('${(l.details || '').replace(/'/g, "\\'")}')">عرض المهام</button>
+                            <div class="task-display-box" style="margin-top:4px;">${tasksFormatted}</div>
                         </td>
                     </tr>`;
                 });
@@ -967,36 +995,43 @@
         }
     }
 
+    /* طباعة سندات شفت الدوام مسطرة ومقفلة بالكامل مع ترويسة صحيحة وإيقاف سحب الورق */
     function printLogRecord(id, emp) {
         getLogs(emp, (logs) => {
             const data = logs.find(x => x.id === id);
             if (!data) return;
             const receipt = document.getElementById('printable-receipt');
             
-            const taskItems = data.details ? data.details.split(' | ').map(t => `<tr><td colspan="2">• ${t}</td></tr>`).join('') : '<tr><td colspan="2">لا توجد تفاصيل</td></tr>';
+            const taskItems = data.details ? data.details.split(' | ').map(t => `<tr><td colspan="2" style="padding:3px; text-align:right;">• ${t}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center;">لا توجد تفاصيل مهام</td></tr>';
 
             receipt.innerHTML = `
-                <div style="text-align:center;">
-                    <h3 style="margin:0; font-size:16px;">صيدلية البلد</h3>
-                    <p style="margin:2px 0; font-size:12px;">إدارة إيمان وإياس</p>
-                    <p style="margin:2px 0; font-size:12px;">سند تسليم وردية دوام</p>
-                    <hr>
-                    <table style="width:100%; text-align:right;">
-                        <tr><td>التاريخ:</td><td>${data.date}</td></tr>
-                        <tr><td>الموظف:</td><td>${data.emp}</td></tr>
-                        <tr><td>الدخول:</td><td>${data.inTime}</td></tr>
-                        <tr><td>الخروج:</td><td>${data.outTime}</td></tr>
-                        <tr><td>بداية الكاش:</td><td>${data.startCash} ₪</td></tr>
-                        <tr><td>نهاية الكاش:</td><td>${data.endCash} ₪</td></tr>
-                        <tr><td>مبيعات الشفت:</td><td>${data.netSales} ₪</td></tr>
-                        <tr><td>المستحق:</td><td>${data.amount} ₪</td></tr>
-                        <tr><td>النقاط:</td><td>${data.points || data.tasksCount || 0} نقطة</td></tr>
+                <div style="width:100%; text-align:center;">
+                    <h2 style="margin:0; font-size:16px; font-weight:bold;">صيدلية البلد</h2>
+                    <p style="margin:2px 0; font-size:12px; font-weight:bold;">إدارة إيمان وإياس</p>
+                    <p style="margin:2px 0; font-size:11px;">سند تسليم وردية دوام</p>
+                    <hr style="border:none; border-top:1px dashed #000; margin:4px 0;">
+                    
+                    <table style="width:100%; border-collapse:collapse; border:1.5px solid #000;">
+                        <tr><td style="width:40%;"><b>التاريخ:</b></td><td>${data.date}</td></tr>
+                        <tr><td><b>الموظف:</b></td><td>${data.emp}</td></tr>
+                        <tr><td><b>الدخول:</b></td><td>${data.inTime}</td></tr>
+                        <tr><td><b>الخروج:</b></td><td>${data.outTime}</td></tr>
+                        <tr><td><b>بداية الكاش:</b></td><td>${data.startCash} ₪</td></tr>
+                        <tr><td><b>نهاية الكاش:</b></td><td>${data.endCash} ₪</td></tr>
+                        <tr><td><b>مبيعات الشفت:</b></td><td>${data.netSales} ₪</td></tr>
+                        <tr><td><b>المستحق:</b></td><td>${data.amount} ₪</td></tr>
+                        <tr><td><b>النقاط:</b></td><td>${data.points || data.tasksCount || 0} نقطة</td></tr>
                     </table>
-                    <hr>
-                    <p style="margin:4px 0; text-align:right;"><b>المهام المنجزة:</b></p>
-                    <table>${taskItems}</table>
-                    <hr>
-                    <p style="font-size:10px; margin-top:8px;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
+                    
+                    <hr style="border:none; border-top:1px dashed #000; margin:6px 0;">
+                    <p style="margin:2px 0; text-align:right; font-size:11px; font-weight:bold;"><b>المهام المنجزة:</b></p>
+                    
+                    <table style="width:100%; border-collapse:collapse; border:1.5px solid #000;">
+                        ${taskItems}
+                    </table>
+                    
+                    <hr style="border:none; border-top:1px dashed #000; margin:6px 0;">
+                    <p style="font-size:10px; margin:2px 0;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
                 </div>
             `;
             window.print();
@@ -1009,19 +1044,21 @@
             if (!p) return;
             const receipt = document.getElementById('printable-receipt');
             receipt.innerHTML = `
-                <div style="text-align:center;">
-                    <h3 style="margin:0; font-size:16px;">صيدلية البلد</h3>
-                    <p style="margin:2px 0; font-size:12px;">إدارة إيمان وإياس</p>
-                    <p style="margin:2px 0; font-size:12px;">سند صرف مالي / سلفة</p>
-                    <hr>
-                    <table style="width:100%; text-align:right;">
-                        <tr><td>التاريخ:</td><td>${p.date}</td></tr>
-                        <tr><td>الموظف:</td><td>${p.emp}</td></tr>
-                        <tr><td>المبلغ المصروف:</td><td>${p.amount} ₪</td></tr>
-                        <tr><td>البيان:</td><td>${p.note}</td></tr>
+                <div style="width:100%; text-align:center;">
+                    <h2 style="margin:0; font-size:16px; font-weight:bold;">صيدلية البلد</h2>
+                    <p style="margin:2px 0; font-size:12px; font-weight:bold;">إدارة إيمان وإياس</p>
+                    <p style="margin:2px 0; font-size:11px;">سند صرف مالي / سلفة</p>
+                    <hr style="border:none; border-top:1px dashed #000; margin:4px 0;">
+                    
+                    <table style="width:100%; border-collapse:collapse; border:1.5px solid #000;">
+                        <tr><td style="width:40%;"><b>التاريخ:</b></td><td>${p.date}</td></tr>
+                        <tr><td><b>الموظف:</b></td><td>${p.emp}</td></tr>
+                        <tr><td><b>المبلغ المصروف:</b></td><td>${p.amount} ₪</td></tr>
+                        <tr><td><b>البيان:</b></td><td>${p.note}</td></tr>
                     </table>
-                    <hr>
-                    <p style="font-size:10px; margin-top:8px;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
+                    
+                    <hr style="border:none; border-top:1px dashed #000; margin:6px 0;">
+                    <p style="font-size:10px; margin:2px 0;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
                 </div>
             `;
             window.print();
