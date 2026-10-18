@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EMAN BALAD PHARMACY</title>
+    <title>صيدلية البلد بإدارة إيمان وإياس</title>
     <!-- مكتبات Firebase للمزامنة اللحظية -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -165,6 +165,7 @@
             font-size: 12px;
         }
 
+        /* تنسيق ممتاز ومخصص للطابعة الحرارية قص وتنسيق */
         #printable-receipt { display: none; }
         @media print {
             body * { visibility: hidden; }
@@ -184,7 +185,7 @@
                 padding: 5px;
             }
             #printable-receipt table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-            #printable-receipt th, #printable-receipt td { border: 1px solid #000; padding: 4px; }
+            #printable-receipt th, #printable-receipt td { border: 1px solid #000; padding: 4px; text-align: right; font-size: 11px; }
             #printable-receipt hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
         }
     </style>
@@ -193,7 +194,7 @@
 
 <div class="main-container">
     <div class="top-bar">
-        <h2>💊 EMAN BALAD PHARMACY - نظام إدارة الشفتات والكاش</h2>
+        <h2>💊 صيدلية البلد بإدارة إيمان وإياس - نظام إدارة الشفتات والكاش</h2>
         <span>إشراف د. إياس والأستاذة إيمان</span>
     </div>
 
@@ -211,10 +212,8 @@
             <div class="card">
                 <h3>تسجيل حضور الدوام وبداية الشفت</h3>
                 <label>اختر الموظف:</label>
-                <select id="empSelect" class="form-control" onchange="handleEmpChange()">
-                </select>
+                <select id="empSelect" class="form-control" onchange="handleEmpChange()"></select>
 
-                <!-- صندوق إضافة موظف جديد -->
                 <div id="newStaffBox" style="display:none; background:#f0f9ff; padding:12px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:12px;">
                     <h4 style="margin:0 0 8px 0; color:#0369a1;">إضافة موظف جديد للسيستم:</h4>
                     <label>اسم الموظف الجديد:</label>
@@ -257,7 +256,7 @@
             </div>
         </div>
 
-        <!-- 2. كشف حساب الموظف (المستقل) -->
+        <!-- 2. كشف حساب الموظف -->
         <div id="statement-tab" class="tab-content" style="display:none;">
             <div class="card">
                 <h3>📜 كشف حساب وتقرير الموظف</h3>
@@ -283,7 +282,7 @@
                                 <th>نهاية الكاش</th>
                                 <th>مبيعات الشفت</th>
                                 <th>المستحق</th>
-                                <th>النقاط</th>
+                                <th>النقاط والمهام المنجزة</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -368,6 +367,7 @@
                                     <th>مبيعات الشفت</th>
                                     <th>المستحق</th>
                                     <th>النقاط</th>
+                                    <th>تفاصيل المهام المنجزة</th>
                                     <th>الإجراءات</th>
                                 </tr>
                             </thead>
@@ -576,7 +576,6 @@
         empSelect.innerHTML += `<option value="NEW_STAFF">➕ إضافة موظف جديد...</option>`;
         if(PINS[currentVal]) empSelect.value = currentVal;
 
-        // Init Dates
         const cYear = new Date().getFullYear();
         if(!document.getElementById('startDate').value) {
             document.getElementById('startDate').value = `${cYear}-01-01`;
@@ -669,7 +668,7 @@
         localStorage.setItem('v7_shifts', JSON.stringify(shifts));
         if (db) db.ref('shifts').set(shifts);
 
-        let clockInMsg = `🟢 *بدء وردية جديدة - EMAN BALAD PHARMACY*\n👤 *الموظف:* ${emp}\n🗓 *التاريخ:* ${shifts[emp].date}\n⏰ *وقت تسجيل الدخول:* ${shifts[emp].inTime}\n💵 *بداية الكاش عند الاستلام:* ${startCash} ₪`;
+        let clockInMsg = `🟢 *بدء وردية جديدة - صيدلية البلد بإدارة إيمان وإياس*\n👤 *الموظف:* ${emp}\n🗓 *التاريخ:* ${shifts[emp].date}\n⏰ *وقت تسجيل الدخول:* ${shifts[emp].inTime}\n💵 *بداية الكاش عند الاستلام:* ${startCash} ₪`;
         if (late) {
             clockInMsg += `\n🚨 *تنبيه:* تم تسجيل الدخول متأخراً عن موعد الشفت الرسمي!`;
         }
@@ -728,7 +727,7 @@
                 }).catch(e => console.log(e));
             }
 
-            const reportMsg = `📋 *تقرير تسليم الوردية والكاش - EMAN BALAD PHARMACY*\n👤 *الموظف:* ${emp}\n🗓 *التاريخ:* ${sData.date}\n⏰ *الدخول:* ${sData.inTime} | *الخروج:* ${record.outTime}\n💵 *بداية الكاش:* ${sData.startCash} ₪\n💵 *نهاية الكاش:* ${endCash} ₪\n📈 *مبيعات الوردية:* ${netSales} ₪\n⭐ *النقاط المكتسبة:* ${points} نقطة`;
+            const reportMsg = `📋 *تقرير تسليم الوردية والكاش - صيدلية البلد بإدارة إيمان وإياس*\n👤 *الموظف:* ${emp}\n🗓 *التاريخ:* ${sData.date}\n⏰ *الدخول:* ${sData.inTime} | *الخروج:* ${record.outTime}\n💵 *بداية الكاش:* ${sData.startCash} ₪\n💵 *نهاية الكاش:* ${endCash} ₪\n📈 *مبيعات الوردية:* ${netSales} ₪\n⭐ *النقاط المكتسبة:* ${points} نقطة\n📝 *المهام المنجزة:* ${doneTasks.join(' - ') || 'لا توجد مهام محدودة'}`;
 
             sendWhatsAppAlerts(reportMsg);
             alert(`✅ تم إنهاء الوردية والمزامنة بنجاح!`);
@@ -766,6 +765,15 @@
             document.getElementById('payoutNote').value = '';
             renderDashboard();
         });
+    }
+
+    function showTaskDetailsAlert(details) {
+        if (!details || details.trim() === "") {
+            alert("📋 لا توجد تفاصيل مهام مسجلة لهذه الوردية.");
+        } else {
+            const formatted = details.split(' | ').join('\n• ');
+            alert("📋 المهام التفصيلية المنجزة في هذه الوردية:\n\n• " + formatted);
+        }
     }
 
     function renderDashboard() {
@@ -809,6 +817,9 @@
                         <td style="font-weight:bold; color:purple;">${l.netSales || 0} ₪</td>
                         <td><b>${l.amount} ₪</b></td>
                         <td><span class="points-badge">⭐ ${pts} نقطة</span></td>
+                        <td style="text-align:right; font-size:11px; max-width:200px;">
+                            <button class="btn btn-primary" style="padding:2px 6px; font-size:11px;" onclick="showTaskDetailsAlert('${(l.details || '').replace(/'/g, "\\'")}')">👁 عرض المهام (${pts})</button>
+                        </td>
                         <td>
                             <button class="btn btn-warning" style="padding:3px 6px; font-size:11px;" onclick="editLog(${l.id}, '${emp}')">✏ تعديل</button>
                             <button class="btn btn-primary" style="padding:3px 6px; font-size:11px;" onclick="printLogRecord(${l.id}, '${emp}')">🖨 طباعة</button>
@@ -874,7 +885,10 @@
                         <td style="color:green;">${l.endCash || 0} ₪</td>
                         <td style="font-weight:bold; color:purple;">${l.netSales || 0} ₪</td>
                         <td><b>${l.amount} ₪</b></td>
-                        <td><span class="points-badge">⭐ ${pts} نقطة</span></td>
+                        <td>
+                            <span class="points-badge">⭐ ${pts} نقطة</span>
+                            <button class="btn btn-primary" style="padding:2px 5px; font-size:10px; margin-top:3px;" onclick="showTaskDetailsAlert('${(l.details || '').replace(/'/g, "\\'")}')">عرض المهام</button>
+                        </td>
                     </tr>`;
                 });
 
@@ -958,19 +972,31 @@
             const data = logs.find(x => x.id === id);
             if (!data) return;
             const receipt = document.getElementById('printable-receipt');
+            
+            const taskItems = data.details ? data.details.split(' | ').map(t => `<tr><td colspan="2">• ${t}</td></tr>`).join('') : '<tr><td colspan="2">لا توجد تفاصيل</td></tr>';
+
             receipt.innerHTML = `
-                <div style="text-align:center; padding:10px;">
-                    <h3>صيدلية إيمان البلد</h3>
-                    <p>سند تسليم وردية دوام</p>
+                <div style="text-align:center;">
+                    <h3 style="margin:0; font-size:16px;">صيدلية البلد</h3>
+                    <p style="margin:2px 0; font-size:12px;">إدارة إيمان وإياس</p>
+                    <p style="margin:2px 0; font-size:12px;">سند تسليم وردية دوام</p>
                     <hr>
-                    <p>التاريخ: ${data.date}</p>
-                    <p>الموظف: ${data.emp}</p>
-                    <p>الدخول / الخروج: ${data.inTime} - ${data.outTime}</p>
-                    <p>بداية الكاش: ₪ ${data.startCash}</p>
-                    <p>نهاية الكاش: ₪ ${data.endCash}</p>
-                    <p>المبيعات: ₪ ${data.netSales}</p>
-                    <p>المستحق: ₪ ${data.amount}</p>
+                    <table style="width:100%; text-align:right;">
+                        <tr><td>التاريخ:</td><td>${data.date}</td></tr>
+                        <tr><td>الموظف:</td><td>${data.emp}</td></tr>
+                        <tr><td>الدخول:</td><td>${data.inTime}</td></tr>
+                        <tr><td>الخروج:</td><td>${data.outTime}</td></tr>
+                        <tr><td>بداية الكاش:</td><td>${data.startCash} ₪</td></tr>
+                        <tr><td>نهاية الكاش:</td><td>${data.endCash} ₪</td></tr>
+                        <tr><td>مبيعات الشفت:</td><td>${data.netSales} ₪</td></tr>
+                        <tr><td>المستحق:</td><td>${data.amount} ₪</td></tr>
+                        <tr><td>النقاط:</td><td>${data.points || data.tasksCount || 0} نقطة</td></tr>
+                    </table>
                     <hr>
+                    <p style="margin:4px 0; text-align:right;"><b>المهام المنجزة:</b></p>
+                    <table>${taskItems}</table>
+                    <hr>
+                    <p style="font-size:10px; margin-top:8px;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
                 </div>
             `;
             window.print();
@@ -983,15 +1009,19 @@
             if (!p) return;
             const receipt = document.getElementById('printable-receipt');
             receipt.innerHTML = `
-                <div style="text-align:center; padding:10px;">
-                    <h3>صيدلية إيمان البلد</h3>
-                    <p>سند صرف مالی / سلفة</p>
+                <div style="text-align:center;">
+                    <h3 style="margin:0; font-size:16px;">صيدلية البلد</h3>
+                    <p style="margin:2px 0; font-size:12px;">إدارة إيمان وإياس</p>
+                    <p style="margin:2px 0; font-size:12px;">سند صرف مالي / سلفة</p>
                     <hr>
-                    <p>التاريخ: ${p.date}</p>
-                    <p>الموظف: ${p.emp}</p>
-                    <p>المبلغ المصروف: ₪ ${p.amount}</p>
-                    <p>البيان: ${p.note}</p>
+                    <table style="width:100%; text-align:right;">
+                        <tr><td>التاريخ:</td><td>${p.date}</td></tr>
+                        <tr><td>الموظف:</td><td>${p.emp}</td></tr>
+                        <tr><td>المبلغ المصروف:</td><td>${p.amount} ₪</td></tr>
+                        <tr><td>البيان:</td><td>${p.note}</td></tr>
+                    </table>
                     <hr>
+                    <p style="font-size:10px; margin-top:8px;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
                 </div>
             `;
             window.print();
