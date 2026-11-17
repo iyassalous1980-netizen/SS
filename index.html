@@ -282,7 +282,7 @@
                 </div>
             </div>
 
-            <!-- قائمة المهام وتسليم الشفت الشامل -->
+            <!-- قائمة المهام وتسليم الشفت الشامل (تضع صح فقط دون تقييم للموظفة) -->
             <div id="tasks-section" class="card" style="display:none;">
                 <h3>📋 قائمة المهام اليومية المطلوبة خلال الوردية (20 مهمة)</h3>
                 <div class="tasks-grid" id="tasksGrid"></div>
@@ -334,7 +334,7 @@
                                 <th>إجمالي التسليم</th>
                                 <th>مطابقة الكاش</th>
                                 <th>المستحق</th>
-                                <th>النقاط والمهام المنجزة</th>
+                                <th>النقاط وتقييم الإدارة</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -359,7 +359,7 @@
             </div>
         </div>
 
-        <!-- 3. غرفة الإدارة (د. إياس & أ. إيمان) -->
+        <!-- 3. غرفة الإدارة (د. إياس & أ. إيمان) - مخصصة للتقييم والتعديل والطباعة -->
         <div id="admin-tab" class="tab-content" style="display:none;">
             <div id="admin-login-box" class="card">
                 <h3>دخول غرفة الإدارة (د. إياس & أ. إيمان)</h3>
@@ -371,7 +371,7 @@
             <div id="admin-dashboard-content" style="display:none;">
                 <div class="card" style="background:#f8fafc;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>📊 تقارير الإدارة المباشرة والشاملة</h3>
+                        <h3>📊 تقارير الإدارة المباشرة والتقييم الشامل</h3>
                         <button class="btn btn-danger" onclick="closeAdmin()">❌ خروج من الإدارة</button>
                     </div>
 
@@ -406,7 +406,7 @@
                 </div>
 
                 <div class="card">
-                    <h4>📝 سجل الدوام والكاش والمهام المنجزة بالتفصيل:</h4>
+                    <h4>📝 سجل الدوام والكاش والمهام المنجزة (مع حقل تقييم إياس وإيمان):</h4>
                     <div style="overflow-x:auto;">
                         <table id="logsTable">
                             <thead>
@@ -420,8 +420,8 @@
                                     <th>مطابقة الكاش</th>
                                     <th>المستحق</th>
                                     <th>النقاط</th>
-                                    <th style="min-width:220px;">تفاصيل المهام وبيان المصروفات</th>
-                                    <th>الإجراءات</th>
+                                    <th style="min-width:280px;">تفاصيل المهام وتقييم وملاحظات الإدارة</th>
+                                    <th>الإجراءات (تعديل، طباعة/PDF، حذف)</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -631,10 +631,11 @@
 
         const cYear = new Date().getFullYear();
         if(!document.getElementById('startDate').value) {
-            document.getElementById('startDate').value = `${cYear}-01-01`;
-            document.getElementById('endDate').value = `${cYear}-12-31`;
-            document.getElementById('stmtStartDate').value = `${cYear}-01-01`;
-            document.getElementById('stmtEndDate').value = `${cYear}-12-31`;
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = todayStr;
+            document.getElementById('endDate').value = todayStr;
+            document.getElementById('stmtStartDate').value = todayStr;
+            document.getElementById('stmtEndDate').value = todayStr;
         }
     }
 
@@ -738,7 +739,7 @@
         }
     }
 
-    /* إرسال إشعار الواتساب التلقائي لـ أ. إيمان وَ د. إياس معاً */
+    /* إرسال إشعار الواتساب لـ أ. إيمان وَ د. إياس معاً */
     function sendWhatsAppAlerts(msgText) {
         window.open(`https://wa.me/${PHONE_IMAN_ADMIN}?text=${encodeURIComponent(msgText)}`, '_blank');
         setTimeout(() => {
@@ -806,22 +807,25 @@
         const rate = RATES[emp] || 15;
         const amount = parseFloat((durationHrs * rate).toFixed(2));
 
-        // المعادلة المالية الكلية (كاش الصندوق + مبيعات الفيزا + المصروفات والنثريات)
         const totalHandover = endCash + visaCash + expenditureCash;
         const netSales = totalHandover - sData.startCash;
+        const statusText = "مطابق ✅";
 
-        let statusText = "مطابق ✅";
+        let taskDetailsList = [];
+        let points = 0;
 
-        let doneTasks = [];
-        TASKS.forEach((t, i) => { if (document.getElementById(`task_${i}`).checked) doneTasks.push(t); });
-
-        const points = doneTasks.length;
+        TASKS.forEach((t, i) => {
+            const isChecked = document.getElementById(`task_${i}`).checked;
+            if (isChecked) points++;
+            let statusStr = isChecked ? "✅ تم" : "❌ لم تتم";
+            taskDetailsList.push(`${t} [${statusStr}]`);
+        });
 
         const record = {
             id: Date.now(), date: sData.date, emp: emp, inTime: sData.inTime, outTime: now.toLocaleTimeString('ar-EG'),
             hours: durationHrs, amount: amount, startCash: sData.startCash, endCash: endCash, visaCash: visaCash,
             expenditureCash: expenditureCash, totalHandover: totalHandover, netSales: netSales, statusText: statusText,
-            tasksCount: doneTasks.length, points: points, details: doneTasks.join(' | '), shiftNotes: shiftNotes
+            tasksCount: points, points: points, details: taskDetailsList.join(' | '), shiftNotes: shiftNotes, adminEval: "لم يُقيم بعد"
         };
 
         getLogs(emp, (logs) => {
@@ -841,10 +845,10 @@
                 }).catch(e => console.log(e));
             }
 
-            const reportMsg = `📋 *تقرير تسليم الوردية والكاش - صيدلية البلد بإدارة إيمان وإياس*\n👤 *الموظف:* ${emp}\n🗓 *التاريخ:* ${sData.date}\n⏰ *الدخول:* ${sData.inTime} | *الخروج:* ${record.outTime}\n💵 *بداية الكاش:* ${sData.startCash} ₪\n💵 *الكاش النقدي بالصندوق:* ${endCash} ₪\n💳 *مبيعات الفيزا:* ${visaCash} ₪\n🧾 *المصروفات والنثريات:* ${expenditureCash} ₪\n📝 *البيان:* ${shiftNotes}\n💰 *إجمالي التسليم الفعلي:* ${totalHandover} ₪\n📊 *نتيجة المراجعة:* ${statusText}\n⭐ *النقاط المكتسبة:* ${points} نقطة\n📝 *المهام المنجزة:* ${doneTasks.join(' - ') || 'لا توجد مهام محدودة'}`;
+            const reportMsg = `📋 *تقرير تسليم الوردية والكاش - صيدلية البلد بإدارة إيمان وإياس*\n👤 *الموظف:* ${emp}\n🗓 *التاريخ:* ${sData.date}\n⏰ *الدخول:* ${sData.inTime} | *الخروج:* ${record.outTime}\n💵 *بداية الكاش:* ${sData.startCash} ₪\n💵 *الكاش النقدي:* ${endCash} ₪\n💳 *مبيعات الفيزا:* ${visaCash} ₪\n🧾 *المصروفات:* ${expenditureCash} ₪\n📝 *البيان:* ${shiftNotes}\n💰 *إجمالي التسليم:* ${totalHandover} ₪\n⭐ *المهام المنجزة:* ${points} / 20`;
 
             sendWhatsAppAlerts(reportMsg);
-            alert(`✅ تم إنهاء الوردية وتسليم الكاش والفيزا والمصروفات بنجاح!`);
+            alert(`✅ تم إنهاء الوردية بنجاح وإرسال التقرير للإدارة!`);
             location.reload();
         });
     }
@@ -904,7 +908,6 @@
                 
                 const remainingSalary = totalEarned - totalPaid;
                 const netPharmacyCash = totalSales - totalVisa - totalExpenses;
-
                 const empTitle = emp === 'ALL_PHARMACY' ? '🌐 صندوق الصيدلية العام (جميع الورديات)' : `فولدر الموظفة (${emp})`;
 
                 document.getElementById('summaryBox').innerHTML = `
@@ -913,18 +916,18 @@
                     <hr style="border:none; border-top:1px solid #bbf7d0; margin:8px 0;">
                     <div>🏆 <b>مجموع النقاط المكتسبة:</b> <span class="points-badge">${totalPoints} نقطة</span></div>
                     <div>📈 <b>إجمالي المبيعات الكلية:</b> <span style="font-weight:bold; color:purple;">${totalSales.toFixed(2)} ₪</span></div>
-                    <div>💳 <b>إجمالي مبيعات الفيزا / الإسناد:</b> <span style="font-weight:bold; color:#0284c7;">${totalVisa.toFixed(2)} ₪</span></div>
-                    <div>🧾 <b>إجمالي المصروفات والنثريات (كهرباء/إيجار):</b> <span style="font-weight:bold; color:#d97706;">${totalExpenses.toFixed(2)} ₪</span></div>
-                    <div>⏱ <b>إجمالي مستحق الراتب/الأجر:</b> <span style="font-weight:bold; color:blue;">${totalEarned.toFixed(2)} ₪</span></div>
-                    <div>💵 <b>إجمالي المسحوبات والسُلف والرواتب المدفوعة:</b> <span style="font-weight:bold; color:green;">${totalPaid.toFixed(2)} ₪</span></div>
-                    <div style="font-size:16px; margin-top:6px; font-weight:bold;">⚖️ <b>الرصيد المالي المتبقي للراتب:</b> <span style="color:${remainingSalary >= 0 ? 'green' : 'red'};">${remainingSalary.toFixed(2)} ₪</span></div>
-                    <div style="font-size:16px; margin-top:4px; font-weight:bold; color:green;">📊 <b>صافي الكاش النقدي المفروض توفره بالصندوق والبنك:</b> <span>${netPharmacyCash.toFixed(2)} ₪</span> | <span class="status-badge-match">مطابق ✅</span></div>
+                    <div>💳 <b>إجمالي الفيزا:</b> <span style="font-weight:bold; color:#0284c7;">${totalVisa.toFixed(2)} ₪</span></div>
+                    <div>🧾 <b>إجمالي المصروفات:</b> <span style="font-weight:bold; color:#d97706;">${totalExpenses.toFixed(2)} ₪</span></div>
+                    <div>⏱ <b>إجمالي مستحق الراتب:</b> <span style="font-weight:bold; color:blue;">${totalEarned.toFixed(2)} ₪</span></div>
+                    <div>💵 <b>إجمالي المسحوبات المدفوعة:</b> <span style="font-weight:bold; color:green;">${totalPaid.toFixed(2)} ₪</span></div>
+                    <div style="font-size:16px; margin-top:6px; font-weight:bold;">⚖️ <b>الرصيد المتبقي للراتب:</b> <span style="color:${remainingSalary >= 0 ? 'green' : 'red'};">${remainingSalary.toFixed(2)} ₪</span></div>
+                    <div style="font-size:16px; margin-top:4px; font-weight:bold; color:green;">📊 <b>صافي الكاش النقدي المفروض بالصندوق:</b> <span>${netPharmacyCash.toFixed(2)} ₪</span> | <span class="status-badge-match">مطابق ✅</span></div>
                 `;
 
                 const lBody = document.querySelector('#logsTable tbody'); lBody.innerHTML = '';
                 filteredLogs.forEach(l => {
                     const pts = l.points || l.tasksCount || 0;
-                    const tasksFormatted = l.details ? l.details.split(' | ').map(t => `• ${t}`).join('<br>') : '<i>لا توجد تفاصيل مهام</i>';
+                    const tasksFormatted = l.details ? l.details.split(' | ').map(t => `• ${t}`).join('<br>') : '<i>لا توجد مهام</i>';
                     const totalDelivery = (l.endCash || 0) + (l.visaCash || 0) + (l.expenditureCash || 0);
 
                     lBody.innerHTML += `<tr>
@@ -938,12 +941,17 @@
                         <td><b>${l.amount} ₪</b></td>
                         <td><span class="points-badge">⭐ ${pts} نقطة</span></td>
                         <td>
-                            <div><b>البيان/الملاحظات:</b> ${l.shiftNotes || 'لا يوجد'}</div>
+                            <div><b>البيان والملاحظات:</b> ${l.shiftNotes || 'لا يوجد'}</div>
                             <div class="task-display-box" style="margin-top:4px;">${tasksFormatted}</div>
+                            <div style="margin-top:6px; background:#fffbeb; padding:6px; border:1px solid #fde047; border-radius:4px;">
+                                <strong style="color:#b45309; font-size:11px;">⭐ تقييم إياس وإيمان وملاحظات الإدارة:</strong><br>
+                                <span style="font-size:12px; font-weight:bold; color:#0f172a;">${l.adminEval || 'لم يُقيم بعد'}</span>
+                            </div>
+                            <button class="btn btn-success" style="padding:4px 8px; font-size:11px; margin-top:5px; width:100%;" onclick="editAdminEval(${l.id}, '${l.emp}')">✍️ تقييم الموظفة (من 10 وملاحظات الإدارة)</button>
                         </td>
                         <td>
                             <button class="btn btn-warning" style="padding:3px 6px; font-size:11px; margin-bottom:2px;" onclick="editLog(${l.id}, '${l.emp}')">✏ تعديل</button><br>
-                            <button class="btn btn-primary" style="padding:3px 6px; font-size:11px; margin-bottom:2px;" onclick="printLogRecord(${l.id}, '${l.emp}')">🖨 طباعة</button><br>
+                            <button class="btn btn-primary" style="padding:3px 6px; font-size:11px; margin-bottom:2px;" onclick="printLogRecord(${l.id}, '${l.emp}')">🖨 طباعة / PDF</button><br>
                             <button class="btn btn-danger" style="padding:3px 6px; font-size:11px;" onclick="deleteLog(${l.id}, '${l.emp}')">❌ حذف</button>
                         </td>
                     </tr>`;
@@ -958,12 +966,29 @@
                         <td>${p.note}</td>
                         <td>
                             <button class="btn btn-warning" style="padding:3px 6px; font-size:11px;" onclick="editPayout(${p.id}, '${p.emp}')">✏ تعديل</button>
-                            <button class="btn btn-primary" style="padding:3px 6px; font-size:11px;" onclick="printReceipt(${p.id}, '${p.emp}')">🖨 طباعة</button>
+                            <button class="btn btn-primary" style="padding:3px 6px; font-size:11px;" onclick="printReceipt(${p.id}, '${p.emp}')">🖨 طباعة / PDF</button>
                             <button class="btn btn-danger" style="padding:3px 6px; font-size:11px;" onclick="deletePayout(${p.id}, '${p.emp}')">❌ حذف</button>
                         </td>
                     </tr>`;
                 });
             });
+        });
+    }
+
+    /* دالة تقييم الإدارة الحصرية (إياس وإيمان) وحفظها في التاريخ المحدد */
+    function editAdminEval(id, emp) {
+        getLogs(emp, (logs) => {
+            const l = logs.find(x => x.id === id);
+            if (!l) return;
+            const evalScore = prompt("أدخل تقييم الموظفة من 10 (مثال: 9/10 أو ممتاز):", l.adminEval && l.adminEval !== 'لم يُقيم بعد' ? l.adminEval.split(' - ')[0] : "10/10");
+            if (evalScore === null) return;
+            const evalNotes = prompt("أدخل ملاحظات الإدارة أو سبب الخصم/التميز:", l.adminEval && l.adminEval.includes(' - ') ? l.adminEval.split(' - ')[1] : "أداء ممتاز");
+            if (evalNotes === null) return;
+
+            l.adminEval = `${evalScore} - ${evalNotes}`;
+            saveLogs(emp, logs);
+            alert("✅ تم حفظ وتثبيت تقييم إياس وإيمان في السجل بنجاح!");
+            renderDashboard();
         });
     }
 
@@ -977,10 +1002,8 @@
         getLogs(emp, (allLogs) => {
             getPayouts(emp, (allPayouts) => {
                 const filteredLogs = allLogs.filter(l => (!sDate || l.date >= sDate) && (!eDate || l.date <= eDate));
-                const filteredPayouts = allPayouts.filter(p => (!sDate || p.date >= sDate) && (!eDate || p.date <= eDate));
-
                 const totalEarned = filteredLogs.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0);
-                const totalPaid = filteredPayouts.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+                const totalPaid = allPayouts.filter(p => (!sDate || p.date >= sDate) && (!eDate || p.date <= eDate)).reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
                 const totalSales = filteredLogs.reduce((s, l) => s + (parseFloat(l.netSales) || 0), 0);
                 const totalPoints = filteredLogs.reduce((s, l) => s + (parseFloat(l.points || l.tasksCount) || 0), 0);
                 const remaining = totalEarned - totalPaid;
@@ -989,10 +1012,10 @@
                     <div style="font-size:16px;">📂 <b>كشف حساب الموظف:</b> <span style="color:var(--secondary); font-weight:bold;">${emp}</span></div>
                     <div>🗓 <b>الفترة المحددة:</b> ${sDate || 'الكل'} إلى ${eDate || 'الكل'}</div>
                     <hr style="border:none; border-top:1px solid #bbf7d0; margin:8px 0;">
-                    <div>🏆 <b>مجموع النقاط التراكمية:</b> <span class="points-badge">${totalPoints} نقطة</span></div>
-                    <div>📈 <b>إجمالي مبيعات الوردية:</b> <span style="font-weight:bold; color:purple;">${totalSales.toFixed(2)} ₪</span></div>
-                    <div>⏱ <b>إجمالي مستحق الدوام:</b> <span style="font-weight:bold; color:blue;">${totalEarned.toFixed(2)} ₪</span></div>
-                    <div>💵 <b>إجمالي المسحوبات والسُلف:</b> <span style="font-weight:bold; color:green;">${totalPaid.toFixed(2)} ₪</span></div>
+                    <div>🏆 <b>مجموع النقاط:</b> <span class="points-badge">${totalPoints} نقطة</span></div>
+                    <div>📈 <b>إجمالي مبيعات الوردية:</b> ${totalSales.toFixed(2)} ₪</div>
+                    <div>⏱ <b>إجمالي مستحق الدوام:</b> ${totalEarned.toFixed(2)} ₪</div>
+                    <div>💵 <b>إجمالي المسحوبات:</b> ${totalPaid.toFixed(2)} ₪</div>
                     <div style="font-size:16px; margin-top:6px; font-weight:bold;">⚖️ <b>الرصيد المتبقي للحساب:</b> <span style="color:${remaining >= 0 ? 'green' : 'red'};">${remaining.toFixed(2)} ₪</span></div>
                 `;
 
@@ -1006,23 +1029,15 @@
                         <td>${l.date}</td>
                         <td>${l.inTime}<br>${l.outTime}</td>
                         <td style="color:blue;">${l.startCash || 0} ₪</td>
-                        <td>💵 كاش: ${l.endCash || 0} ₪<br><small style="color:#0284c7;">💳 فيزا: ${l.visaCash || 0} ₪</small><br><small style="color:#d97706;">🧾 مصروفات: ${l.expenditureCash || 0} ₪</small></td>
+                        <td>💵 كاش: ${l.endCash || 0} ₪<br>💳 فيزا: ${l.visaCash || 0} ₪<br>🧾 مصروفات: ${l.expenditureCash || 0} ₪</td>
                         <td style="font-weight:bold; color:purple;">${totalDelivery} ₪</td>
                         <td><span class="status-badge-match">مطابق ✅</span></td>
                         <td><b>${l.amount} ₪</b></td>
                         <td>
                             <span class="points-badge">⭐ ${pts} نقطة</span>
                             <div class="task-display-box" style="margin-top:4px;">${tasksFormatted}</div>
+                            <div style="margin-top:4px; font-size:11px; color:#b45309;"><b>تقييم الإدارة:</b> ${l.adminEval || 'لم يُقيم بعد'}</div>
                         </td>
-                    </tr>`;
-                });
-
-                const pBody = document.querySelector('#stmtPayoutsTable tbody'); pBody.innerHTML = '';
-                filteredPayouts.forEach(p => {
-                    pBody.innerHTML += `<tr>
-                        <td>${p.date}</td>
-                        <td style="color:green; font-weight:bold;">${p.amount} ₪</td>
-                        <td>${p.note}</td>
                     </tr>`;
                 });
             });
@@ -1037,7 +1052,7 @@
             const newStart = prompt("بداية الكاش:", l.startCash || 0);
             const newEnd = prompt("نهاية الكاش النقدي بالصندوق:", l.endCash || 0);
             const newVisa = prompt("مبيعات الفيزا:", l.visaCash || 0);
-            const newExp = prompt("المصروفات والنثريات:", l.expenditureCash || 0);
+            const newExp = prompt("المصروفات:", l.expenditureCash || 0);
             const newNotes = prompt("بيان المصروفات والملاحظات:", l.shiftNotes || '');
             const newAmt = prompt("المستحق (شيكل):", l.amount);
 
@@ -1063,7 +1078,7 @@
             getLogs(emp, (logs) => {
                 const newLogs = logs.filter(x => x.id !== id);
                 saveLogs(emp, newLogs);
-                alert("✅ تم حذف سجل الوردية بنجاح.");
+                alert("✅ تم حذف السجل بنجاح.");
                 renderDashboard();
             });
         }
@@ -1074,13 +1089,12 @@
             const p = payouts.find(x => x.id === id);
             if (!p) return;
 
-            const newAmt = prompt("أدخل المبلغ الجديد:", p.amount);
-            const newNote = prompt("أدخل البيان الجديد:", p.note);
+            const newAmt = prompt("المبلغ الجديد:", p.amount);
+            const newNote = prompt("البيان الجديد:", p.note);
 
             if (newAmt !== null && newNote !== null) {
                 p.amount = parseFloat(newAmt);
                 p.note = newNote;
-
                 savePayouts(emp, payouts);
                 alert("✅ تم تعديل سند الصرف بنجاح!");
                 renderDashboard();
@@ -1099,37 +1113,36 @@
         }
     }
 
-    /* طباعة سندات شفت الدوام مسطرة ومقفلة بالكامل لـ 80mm مع تفاصيل الكاش والفيزا والمصروفات والقص */
     function printLogRecord(id, emp) {
         getLogs(emp, (logs) => {
             const data = logs.find(x => x.id === id);
             if (!data) return;
             const receipt = document.getElementById('printable-receipt');
             
-            const taskItems = data.details ? data.details.split(' | ').map(t => `<tr><td colspan="2" style="padding:3px; text-align:right;">• ${t}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center;">لا توجد تفاصيل مهام</td></tr>';
+            const taskItems = data.details ? data.details.split(' | ').map(t => `<tr><td colspan="2" style="padding:3px; text-align:right;">• ${t}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center;">لا توجد مهام</td></tr>';
             const totalDelivery = (data.endCash || 0) + (data.visaCash || 0) + (data.expenditureCash || 0);
 
             receipt.innerHTML = `
                 <div style="width:100%; text-align:center;">
                     <h2 style="margin:0; font-size:16px; font-weight:bold;">صيدلية البلد</h2>
                     <p style="margin:2px 0; font-size:12px; font-weight:bold;">إدارة إيمان وإياس</p>
-                    <p style="margin:2px 0; font-size:11px;">سند تسليم وردية دوام</p>
+                    <p style="margin:2px 0; font-size:11px;">سند تسليم وردية دوام وتقييم الإدارة</p>
                     <hr style="border:none; border-top:1px dashed #000; margin:4px 0;">
                     
                     <table style="width:100%; border-collapse:collapse; border:1.5px solid #000;">
                         <tr><td style="width:45%;"><b>التاريخ:</b></td><td>${data.date}</td></tr>
                         <tr><td><b>الموظف:</b></td><td>${data.emp}</td></tr>
-                        <tr><td><b>الدخول:</b></td><td>${data.inTime}</td></tr>
-                        <tr><td><b>الخروج:</b></td><td>${data.outTime}</td></tr>
+                        <tr><td><b>الدخول / الخروج:</b></td><td>${data.inTime} - ${data.outTime}</td></tr>
                         <tr><td><b>بداية الكاش:</b></td><td>${data.startCash} ₪</td></tr>
                         <tr><td><b>الكاش بالصندوق:</b></td><td>${data.endCash} ₪</td></tr>
                         <tr><td><b>مبيعات الفيزا:</b></td><td>${data.visaCash || 0} ₪</td></tr>
-                        <tr><td><b>المصروفات والنثريات:</b></td><td>${data.expenditureCash || 0} ₪</td></tr>
+                        <tr><td><b>المصروفات:</b></td><td>${data.expenditureCash || 0} ₪</td></tr>
                         <tr><td><b>بيان المصروفات:</b></td><td>${data.shiftNotes || 'لا يوجد'}</td></tr>
                         <tr><td><b>إجمالي التسليم:</b></td><td><b>${totalDelivery} ₪</b></td></tr>
                         <tr><td><b>مطابقة الكاش:</b></td><td><b>مطابق ✅</b></td></tr>
                         <tr><td><b>المستحق:</b></td><td>${data.amount} ₪</td></tr>
                         <tr><td><b>النقاط:</b></td><td>${data.points || data.tasksCount || 0} نقطة</td></tr>
+                        <tr><td><b>⭐ تقييم الإدارة:</b></td><td><b>${data.adminEval || 'لم يُقيم بعد'}</b></td></tr>
                     </table>
                     
                     <hr style="border:none; border-top:1px dashed #000; margin:6px 0;">
@@ -1140,7 +1153,7 @@
                     </table>
                     
                     <hr style="border:none; border-top:1px dashed #000; margin:6px 0;">
-                    <p style="font-size:10px; margin:2px 0;">تاريخ الطباعة: ${new Date().toLocaleString('ar-EG')}</p>
+                    <p style="font-size:10px; margin:2px 0;">تاريخ الطباعة / حفظ PDF: ${new Date().toLocaleString('ar-EG')}</p>
                 </div>
             `;
             window.print();
@@ -1162,7 +1175,7 @@
                     <table style="width:100%; border-collapse:collapse; border:1.5px solid #000;">
                         <tr><td style="width:40%;"><b>التاريخ:</b></td><td>${p.date}</td></tr>
                         <tr><td><b>الموظف:</b></td><td>${p.emp}</td></tr>
-                        <tr><td><b>المبلغ المصروف:</b></td><td>${p.amount} ₪</td></tr>
+                        <tr><td><b>المبلغ:</b></td><td>${p.amount} ₪</td></tr>
                         <tr><td><b>البيان:</b></td><td>${p.note}</td></tr>
                     </table>
                     
